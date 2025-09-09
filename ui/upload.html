@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Upload Face Image</title>
+</head>
+<body>
+  <h2>Upload Face Image for Analysis</h2>
+  <form action="http://localhost:8080/api/faces" method="post" enctype="multipart/form-data">
+    <input type="file" name="image" accept="image/*" required />
+    <button type="submit">Upload</button>
+  </form>
+</body>
+</html>
