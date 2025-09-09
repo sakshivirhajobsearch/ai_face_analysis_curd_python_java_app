@@ -1,55 +1,78 @@
-from flask import Flask, jsonify, request
+from flask import Flask, request, render_template_string
+from deepface import DeepFace
+import base64
 
 app = Flask(__name__)
 
-# Sample in-memory "database"
-data_store = [
-    {"id": 1, "name": "Item One"},
-    {"id": 2, "name": "Item Two"}
-]
+HTML_TEMPLATE = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Face Analysis</title>
+</head>
+<body>
+    <h1>Upload Image for Face Analysis</h1>
+    <form method="POST" action="/" enctype="multipart/form-data">
+      <input type="file" name="image" required />
+      <button type="submit">Analyze Face</button>
+    </form>
 
-# Home route
-@app.route('/')
-def home():
-    return "Welcome to the Flask CRUD API!"
+    {% if image_data %}
+        <h2>Uploaded Image:</h2>
+        <img src="data:image/jpeg;base64,{{ image_data }}" width="300"/>
 
-# Get all data
-@app.route('/api/data', methods=['GET'])
-def get_all_data():
-    return jsonify(data_store)
+        <h2>Analysis Results:</h2>
+        <ul>
+            <li><strong>Age:</strong> {{ result.age }}</li>
+            <li><strong>Gender:</strong> {{ result.gender }}</li>
+            <li><strong>Emotion:</strong> {{ result.emotion }}</li>
+            <li><strong>Race:</strong> {{ result.race }}</li>
+        </ul>
+    {% endif %}
 
-# Get single data by ID
-@app.route('/api/data/<int:data_id>', methods=['GET'])
-def get_data_by_id(data_id):
-    item = next((d for d in data_store if d["id"] == data_id), None)
-    if item:
-        return jsonify(item)
-    return jsonify({"error": "Item not found"}), 404
+    {% if error %}
+        <p style="color:red;"><strong>Error:</strong> {{ error }}</p>
+    {% endif %}
+</body>
+</html>
+"""
 
-# Create new data
-@app.route('/api/data', methods=['POST'])
-def create_data():
-    new_data = request.json
-    new_data['id'] = len(data_store) + 1
-    data_store.append(new_data)
-    return jsonify(new_data), 201
+@app.route("/", methods=["GET", "POST"])
+def index():
+    if request.method == "POST":
+        if "image" not in request.files:
+            return render_template_string(HTML_TEMPLATE, error="No image provided")
+        
+        image_file = request.files["image"]
+        
+        try:
+            # Analyze the face (returns a list)
+            analysis_list = DeepFace.analyze(
+                img_path=image_file,
+                actions=["age", "gender", "emotion", "race"]
+            )
 
-# Update data
-@app.route('/api/data/<int:data_id>', methods=['PUT'])
-def update_data(data_id):
-    item = next((d for d in data_store if d["id"] == data_id), None)
-    if not item:
-        return jsonify({"error": "Item not found"}), 404
-    updated_data = request.json
-    item.update(updated_data)
-    return jsonify(item)
+            # DeepFace returns a list with one dict
+            analysis = analysis_list[0] if isinstance(analysis_list, list) else analysis_list
 
-# Delete data
-@app.route('/api/data/<int:data_id>', methods=['DELETE'])
-def delete_data(data_id):
-    global data_store
-    data_store = [d for d in data_store if d["id"] != data_id]
-    return jsonify({"message": f"Item {data_id} deleted"}), 200
+            # Convert image to base64 for display
+            image_file.seek(0)
+            image_data = base64.b64encode(image_file.read()).decode("utf-8")
 
-if __name__ == '__main__':
-    app.run(debug=True)
+            # Extract main results
+            result = {
+                "age": analysis["age"],
+                "gender": analysis["gender"],
+                "emotion": max(analysis["emotion"], key=analysis["emotion"].get),
+                "race": max(analysis["race"], key=analysis["race"].get)
+            }
+
+            return render_template_string(HTML_TEMPLATE, image_data=image_data, result=result)
+
+        except Exception as e:
+            return render_template_string(HTML_TEMPLATE, error=str(e))
+
+    return render_template_string(HTML_TEMPLATE)
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)

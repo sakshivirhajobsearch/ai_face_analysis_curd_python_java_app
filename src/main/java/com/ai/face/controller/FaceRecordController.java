@@ -28,6 +28,11 @@ public class FaceRecordController {
 	@Autowired
 	private FaceService faceService;
 
+	@GetMapping("/")
+	public String home() {
+		return "Face CRUD Application is running. Use /api/faces for REST API.";
+	}
+
 	// GET all faces
 	@GetMapping
 	public ResponseEntity<List<FaceRecord>> getAllFaces() {

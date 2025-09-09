@@ -8,6 +8,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 // Download Visual Studio Build Tools: https://visualstudio.microsoft.com/visual-cpp-build-tools/
 // You can download precompiled wheels from: https://pypi.org/project/dlib/#files
 
+// [User Uploads Image] → [Spring Boot Java API] → [Python AI Model (via REST)] → [Result to User]
+
 @SpringBootApplication
 public class FaceCrudApplication {
 

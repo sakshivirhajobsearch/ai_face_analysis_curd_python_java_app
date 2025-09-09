@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Face Analysis</title>
+</head>
+<body>
+    <h1>Upload Image for Face Analysis</h1>
+    <form method="POST" action="http://127.0.0.1:5000/analyze" enctype="multipart/form-data">
+      <input type="file" name="image" required />
+      <button type="submit">Analyze Face</button>
+    </form>
+</body>
+</html>
